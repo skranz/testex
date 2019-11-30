@@ -16,13 +16,13 @@ name.of.call = function(call) {
   }
   name = as.character(call[[1]])
   if (name == "<-" | name == "=") {
-    name = as.character(call[[3]][[1]])
+    name = name.of.call(call[[3]])
   }
   name
 }
 
-deparse1 = function(call, collapse="") {
-  paste0(deparse(call, width=500),collapse=collapse)
+deparse1 = function(call, collapse="\n") {
+  paste0(deparse(call, width=500, control = c("keepNA", "keepInteger", "niceNames", "showAttributes", "useSource")),collapse=collapse)
 }
 
 quick_df = function(...) {

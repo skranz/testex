@@ -79,6 +79,11 @@ parse.ex.in.fun.file = function(file, root.dir=getwd(), text=NULL) {
   }
 
   fns = as.vector(lsf.str(envir = env))
+  if (length(fns)==0) {
+    cat(paste0("\nNo functions found in example file ", file))
+    return(NULL)
+  }
+
   fn = fns[[1]]
   no.args = sapply(fns, function(fn) {
     fun = env[[fn]]
