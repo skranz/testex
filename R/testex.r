@@ -30,7 +30,7 @@ example = function() {
 #' @param log.file The file name of the log. Should be an Rmd file.
 #' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
 #' @param parent.env The parent environment in which examples are evaluated.
-testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_test_stats.csv", parent.env = parent.frame(), exceptions=et$exceptions) {
+testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_test_stats.csv", parent.env = parent.frame(), exemptions=et$exemptions) {
   restore.point("testex_run")
   writeLines(paste0(
 "# Comparison of examples
@@ -46,7 +46,7 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_
     write.log(log.file,"## ", ex$file, " ", ex$part,"\n")
     new.res = eval.example(ex,parent.env = parent.env)
     old.res = et$ex.res[[i]]
-    res = compare.example.results(ex,old.res,new.res, exceptions=exceptions)
+    res = compare.example.results(ex,old.res,new.res, exemptions=exemptions)
     num.issues = num.issues + res$num.issues
     write.log(log.file, res$log)
     stats[[i]] = res$stat.df
@@ -66,12 +66,12 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_
   } else {
     cat(paste0("\n",num.issues, " issues found when testing examples. See log in\n", log.file,"\n"))
 
-    funs = setdiff(stat.df$fun, default.global.ignore.funs())
+    funs = setdiff(stat.df$fun, default.global.exempt.funs())
     if (length(funs)>0) {
 
       cat("\nIf you want to except the functions that lead to different arguments use the argument:\n")
-      exception.call = paste0("exceptions=testex_exceptions(funs = c(",paste0('"',funs,'"', collapse=", "),"))")
-      cat("\n", exception.call,"\n")
+      exemption.call = paste0("exemptions=testex_exemptions(funs = c(",paste0('"',funs,'"', collapse=", "),"))")
+      cat("\n", exemption.call,"\n")
     }
 
 
@@ -84,22 +84,22 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_
 #' Create new example tests
 #'
 #' @param sources example sources defined by a call to \code{\link{testex_sources}}
-#' @param exceptions possible exceptions of function calls or returned classes that shall not be compared, generated with \code{\link{testex_exceptions}}.
+#' @param exemptions possible exemptions of function calls or returned classes that shall not be compared, generated with \code{\link{testex_exemptions}}.
 #' @param parent.env The parent environment in which examples are evaluated. By default \code{parent.frame()}.
 #' @param verbose Shall extra information be shown while creating the tests?
-testex_create = function(sources,exceptions=testex_exceptions(), parent.env=parent.frame(),  verbose=TRUE) {
+testex_create = function(sources,exemptions=testex_exemptions(), parent.env=parent.frame(),  verbose=TRUE) {
   restore.point("testex_create")
   ex.df = parse.examples(sources)
   ex.res = eval.examples(ex.df, parent.env=parent.env)
   list(
     time=Sys.time(),
-    exceptions=testex_exceptions(),
+    exemptions=testex_exemptions(),
     ex.df = ex.df,
     ex.res = ex.res
   )
 }
 
-compare.example.results = function(ex,old.res, new.res, exceptions=NULL) {
+compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
   restore.point("compare.example.results")
 
   same = is.true(
@@ -107,9 +107,9 @@ compare.example.results = function(ex,old.res, new.res, exceptions=NULL) {
     old.res$error == new.res$error
   )
 
-  no.val = old.res$call.name %in% union(exceptions$funs, exceptions$ignore.error.funs) | old.res$class %in% exceptions$classes
+  no.val = old.res$call.name %in% union(exemptions$funs, exemptions$exempt.error.funs) | old.res$class %in% exemptions$classes
 
-  no.error = old.res$call.name %in% exceptions$ignore.error.funs
+  no.error = old.res$call.name %in% exemptions$exempt.error.funs
 
 
   ok = TRUE

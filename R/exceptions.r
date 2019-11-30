@@ -1,12 +1,12 @@
-#' Create exceptions, i.e. functions or classes that will not be compared
+#' Create exemptions, i.e. functions or classes that will not be compared
 #'
-testex_exceptions = function(funs=NULL, classes=NULL, ignore.error.funs=NULL, global.ignore.funs = default.global.ignore.funs(), global.ignore.error.funs=NULL) {
-  list(funs = union(funs, global.ignore.funs), classes=classes, ignore.error.funs = union(ignore.error.funs, global.ignore.error.funs))
+testex_exemptions = function(funs=NULL, classes=NULL, exempt.error.funs=NULL, global.exempt.funs = default.global.exempt.funs(), global.exempt.error.funs=NULL) {
+  list(funs = union(funs, global.exempt.funs), classes=classes, exempt.error.funs = union(exempt.error.funs, global.exempt.error.funs))
 }
 
 
 
-default.global.ignore.funs = function() {
+default.global.exempt.funs = function() {
   c("library", "runif","rnorm","rexp")
 }
 
