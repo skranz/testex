@@ -7,13 +7,13 @@ ser = serialize("Hello", NULL, version=2)
 cat("\n", digest(ser,serialize=FALSE, skip=14))
 cat("\n",digest(serialize("Hello",NULL, version=2),serialize = FALSE, skip=14))
 cat("\nNow with refhook")
-cat("\n",digest(serialize("Hello",NULL,refhook = function(...) ""),serialize = FALSE, skip=14))
+cat("\n",digest(serialize("Hello",NULL,refhook = function(...) "", version=2),serialize = FALSE, skip=14))
 
 
 cat("\nNow with and without refhook skipping 14")
-ser = serialize("Hello",NULL,refhook = function(...) "")
+ser = serialize("Hello",NULL,refhook = function(...) "", version=2)
 cat("\n",digest(ser,serialize = FALSE, skip=14L))
-ser = serialize("Hello",NULL)
+ser = serialize("Hello",NULL, version=2)
 cat("\n",digest(ser,serialize = FALSE, skip=14L))
 
 
