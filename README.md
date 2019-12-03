@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/skranz/testex.svg?branch=master)](https://travis-ci.org/skranz/testex)
+
 ## Tools for testing packages by comparing results from examples
 
 The standard approach of unit testing, e.g. via [testthat](https://testthat.r-lib.org/) is to write explicit test commands, like
