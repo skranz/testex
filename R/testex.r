@@ -200,7 +200,7 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
       df$error[i] = TRUE
     } else {
       # Serialize ignoring environment references
-      ser = serialize(res, NULL, refhook=function(...) "")
+      ser = serialize(res, NULL, refhook=function(...) "", version=2)
 
       df$digest[i] = digest(ser,serialize = FALSE, skip=14)
       df$class[i] = class(res)[1]
