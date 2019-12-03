@@ -1,7 +1,7 @@
 # Comparison of examples
 
-2019-12-03 22:10:23 (new) vs
-2019-12-03 22:10:23 (old)
+2019-12-03 22:26:15 (new) vs
+2019-12-03 22:26:15 (old)
 
 ##  1
 
@@ -21,4 +21,8 @@ Everything ok.
 Everything ok.
 ## testex/examples.Rmd 4
 
-Everything ok.
+```{r eval=FALSE}
+z = sum(x$speed)
+### !! THROWS NEW ERROR !!
+### As before an error is thrown.
+```
