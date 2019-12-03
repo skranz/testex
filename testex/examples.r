@@ -11,6 +11,6 @@ testex.example = function() {
     if (x==2) stop("Error")
     x*x
   }
-  res = testex_run(et, verbose=FALSE)
+  res = testex_run(et,log.file = "testex/inner_log.Rmd",stat.file = "testex/inner_stats.csv", verbose=FALSE)
   res
 }

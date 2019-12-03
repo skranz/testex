@@ -1,0 +1,24 @@
+# Comparison of examples
+
+2019-12-03 20:10:48 (new) vs
+2019-12-03 20:10:47 (old)
+
+##  1
+
+```{r eval=FALSE}
+library(dplyr)
+f(1)
+f(2)
+### !! THROWS NEW ERROR !!
+f(3)
+### RESULTS DIFFER
+```
+## testex/examples.Rmd 2
+
+Everything ok.
+## testex/examples.Rmd 3
+
+Everything ok.
+## testex/examples.Rmd 4
+
+Everything ok.
