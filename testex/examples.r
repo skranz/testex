@@ -10,7 +10,7 @@ testex.example = function() {
   sources = testex_sources(ex.text=code,rmd.files="testex/examples.Rmd")
   et = testex_create(sources,verbose = FALSE)
 
-  et$ex.df
+  select(et$ex.df, -extra.funs)
   f = function(x) {
     if (x==2) stop("Error")
     x*x
