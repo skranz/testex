@@ -202,7 +202,7 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
       # Serialize ignoring environment references
       ser = serialize(res, NULL, refhook=function(...) "")
 
-      df$digest[i] = digest(ser,serialize = FALSE)
+      df$digest[i] = digest(ser,serialize = FALSE, skip=14)
       df$class[i] = class(res)[1]
       #df$value[[i]] = get.short.value(res)
     }

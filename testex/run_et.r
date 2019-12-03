@@ -1,6 +1,13 @@
 cat("\nRun example tests...")
 library(testex)
 
+
+cat("\n",digest("Hello"))
+cat("\n",digest(serialize("Hello",NULL),serialize = FALSE, skip=14))
+cat("\n",digest(serialize("Hello",NULL,refhook = function(...) NULL),serialize = FALSE, skip=14))
+cat("\n",digest(serialize("Hello",NULL),serialize = FALSE))
+
+
 et = readRDS("testex/et.Rds")
 
 exemptions=testex_exemptions(classes = c("testex_object"))

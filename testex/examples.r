@@ -4,10 +4,6 @@ testex.example = function() {
   "Hello"
   1+1
 
-  cat(digest("Hello"))
-  cat(digest(serialize("Hello",NULL),serialize = FALSE, skip=14))
-  cat(digest(serialize("Hello",NULL),serialize = FALSE))
-
   digest
   f = function(x) {
     x
