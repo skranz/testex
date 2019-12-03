@@ -38,8 +38,11 @@ parse.examples = function(sources) {
     parse.ex.file(sources$ex.file[i])
   }))
 
+  res5 = bind_rows(lapply(seq_along(sources$rmd.file), function(i) {
+    parse.ex.from.rmd.file(sources$rmd.file[i])
+  }))
 
-  bind_rows(res1,res2, res3, res4)
+  bind_rows(res1,res2, res3, res4, res5)
 }
 
 parse.ex.file = function(file, part="", root.dir=getwd()) {
@@ -49,7 +52,7 @@ parse.ex.file = function(file, part="", root.dir=getwd()) {
 }
 
 
-parse.ex.text = function(text, file="", part="") {
+parse.ex.text = function(text, file="", part="", type="plain", include=TRUE) {
   restore.point("parse.ex.text")
 
   env = new.env()
@@ -58,7 +61,7 @@ parse.ex.text = function(text, file="", part="") {
 
   code.li = unlist(lapply( calls, deparse1))
 
-  ex.df = tibble(file=file, part=part, calls=list(calls), call.names = list(call.names), code=list(code.li),  extra.funs = list(list()))
+  ex.df = tibble(file=file, part=part, include=include, calls=list(calls), call.names = list(call.names), code=list(code.li),  extra.funs = list(list()))
   ex.df
 }
 
@@ -67,7 +70,7 @@ parse.ex.in.fun.text = function(text) {
   parse.ex.in.fun.file(text=text)
 }
 
-parse.ex.in.fun.file = function(file, root.dir=getwd(), text=NULL) {
+parse.ex.in.fun.file = function(file, root.dir=getwd(), text=NULL, type="fun", include=TRUE) {
   restore.point("parse.fun.example.file")
   env = new.env()
   if (missing(file) & !is.null(text)) {
@@ -122,6 +125,32 @@ parse.ex.in.fun.file = function(file, root.dir=getwd(), text=NULL) {
   })
 
 
-  ex.df = tibble(file=file.after.root(file, root.dir), part=fns, calls=call.li, call.names = call.names, code=code.li,  extra.funs = replicate(NROW(fns),list(extra.funs)))
+  ex.df = tibble(file=file.after.root(file, root.dir), part=fns, include=include, calls=call.li, call.names = call.names, code=code.li,  extra.funs = replicate(NROW(fns),list(extra.funs)))
+  ex.df
+}
+
+
+parse.ex.from.rmd.file = function(file, part="", root.dir=getwd()) {
+  restore.point("parse.rmd.file")
+  text = readLines(file,warn=FALSE)
+
+  chunk.df = parse.rmd.chunks(text)
+
+  chunk.df$include = sapply(chunk.df$args, function(args) {
+    if (is.null(args[["include"]])) return(TRUE)
+    args[["include"]]
+  })
+  chunk.df$eval = sapply(chunk.df$args, function(args) {
+    if (is.null(args[["eval"]])) return(TRUE)
+    args[["eval"]]
+  })
+
+  chunk.df = filter(chunk.df, eval)
+
+  file=file.after.root(file, root.dir)
+  li = lapply(seq_len(NROW(chunk.df)), function(i) {
+    parse.ex.text(text = chunk.df$code[[i]], file=file, part=as.character(i), type="rmd", include=chunk.df$include[[i]])
+  })
+  ex.df = bind_rows(li)
   ex.df
 }

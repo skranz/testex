@@ -1,0 +1,24 @@
+---
+title: "Test.Rmd"
+output: html_document
+---
+
+```{r "setup", include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## R Markdown
+Just some examples...
+```{r cars}
+summary(cars)
+```
+
+
+```{r}
+x = filter(cars,speed<5)
+```
+
+```{r}
+z  = sum(x$speed)
+```

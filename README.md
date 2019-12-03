@@ -1,8 +1,3 @@
----
-output: 
-  html_document: 
-    keep_md: yes
----
 ## Tools for testing packages by comparing results from examples
 
 The standard approach of unit testing, e.g. via [testthat](https://testthat.r-lib.org/) is to write explicit test commands, like
@@ -19,9 +14,9 @@ test_that("Distinct roots", {
 ```
 Copied from [this](https://www.johndcook.com/blog/2013/06/12/example-of-unit-testing-r-code-with-testthat/) blog entry on testing.
 
-While very useful, writing comprehensive tests is also quite time intensive. While my packages don't currently have such tests, they have a lot of examples, partly in separate R files, partly inside vignettes.
+While very useful, writing comprehensive tests is also quite time intensive. While I have not written explicit tests for my packages, they have a lot of examples, partly in separate R files, partly inside vignettes.
 
-If these examples worked correctly in a previous version of my package one way of testing a new package version is that all those examples again run without error and yield the same results as earlier (unless I changed something on purpose that would cause different results).
+If these examples worked correctly in a previous version of my package, one way of testing a new package version is that all those examples again run without error and yield the same results as earlier (unless I changed something on purpose that would cause different results).
 
 The package `testex` shall help to test your package using your examples. Install it from Github via:
 
@@ -75,32 +70,40 @@ f = function(x) {
 
 # Evaluate all examples again
 # and compare with previous results
-testex_run(et)
+res = testex_run(et)
 ```
 
+You will see the message:
 ```
-## 
-## 2 issues found when testing examples. See log in
-## example_test_log.Rmd
+Eval  myexample
+2 issues found when testing examples. See log in
+example_test_log.Rmd
+```
+The created log file `example_test_log.Rmd` will show you where the errors have occured in a human readable form.
+
+The returned list `res` will look like:
+```
+res
+
+$`num.issues`
+[1] 2
+
+$issue.df
+# A tibble: 2 x 7
+  file  part      call       class   fun   differs error
+  <chr> <chr>     <list>     <chr>   <chr> <lgl>   <lgl>
+1 ""    myexample <language> numeric f     TRUE    TRUE 
+2 ""    myexample <language> numeric f     TRUE    FALSE
+
+$stat.df
+# A tibble: 1 x 3
+  fun   differs error
+  <chr>   <int> <int>
+1 f           2     1
 ```
 
-The created log file `example_test_log.Rmd` would looks as follows:
+## Integrating with Travis CI
 
-```
-    # Comparison of examples
-    
-    2019-11-27 14:57:45 (new) vs
-    2019-11-27 14:57:45 (old)
-    
-    ##  my_example
-    
-    ```{r eval=FALSE}
-    f(1)
-    f(2)
-    ### !! THROWS NEW ERROR !!
-    f(3)
-    ### RESULTS DIFFER
-    ```
-```
+For an example of how to combine `testex` with [Travis CI](https://docs.travis-ci.com/user/languages/r/), take a look at the github page of my [RelationContracts](https://github.com/skranz/RelationalContracts) package. In particular look at the [.travis.yml](https://github.com/skranz/RelationalContracts/blob/master/.travis.yml) file and the folder [testex](https://github.com/skranz/RelationalContracts/tree/master/testex).
 
-
+You can also look at the corresponding files on the [testex](https://github.com/skranz/testex) github page, but those might be less clear due to the recursive nature of testing `testex` with `testex`.

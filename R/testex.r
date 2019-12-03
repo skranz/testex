@@ -3,8 +3,9 @@ example = function() {
     x
   }
   code = "library(dplyr);f(1);f(2);f(3)"
-  sources = testex_sources(ex.in.fun.files = "../ex_fun.R", ex.text=code)
+  sources = testex_sources(rmd.files = "../test.Rmd", ex.text=code)
   et = testex_create(sources)
+  et$ex.df
 
   f = function(x) {
     if (x==2) stop("Error")
@@ -13,70 +14,9 @@ example = function() {
   res = testex_run(et)
   res
 
-  ex.df = parse.example.files(files)
-  res = eval.examples(ex.df)
-
-  ex = ex.df[1,]
-  eval.example(ex)
-}
-
-#' Run example tests
-#'
-#' Reruns all examples that have been originally evaluated and stored in an example test.
-#'
-#' Returns the number of calls that now return different values or throw an error and writes a detailed log as Rmd file.
-#'
-#' @param et An example test originally created with \code{\link{testex_create}}
-#' @param log.file The file name of the log. Should be an Rmd file.
-#' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
-#' @param parent.env The parent environment in which examples are evaluated.
-testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_test_stats.csv", parent.env = parent.frame(), exemptions=et$exemptions) {
-  restore.point("testex_run")
-  writeLines(paste0(
-"# Comparison of examples
-
-", Sys.time(), " (new) vs
-", et$time, " (old)
-"), log.file)
-
-  num.issues = 0
-  stats = vector("list", NROW(et$ex.df))
-  for (i in seq_len(NROW(et$ex.df))) {
-    ex = et$ex.df[i,]
-    write.log(log.file,"## ", ex$file, " ", ex$part,"\n")
-    new.res = eval.example(ex,parent.env = parent.env)
-    old.res = et$ex.res[[i]]
-    res = compare.example.results(ex,old.res,new.res, exemptions=exemptions)
-    num.issues = num.issues + res$num.issues
-    write.log(log.file, res$log)
-    stats[[i]] = res$stat.df
-  }
-
-  stat.df = bind_rows(stats) %>%
-    group_by(fun) %>%
-    summarize(differs=sum(differs), error=sum(error)) %>%
-    ungroup() %>%
-    arrange(-differs, -error)
-
-  write.csv(stat.df,stat.file, row.names = FALSE)
 
 
-  if (num.issues==0) {
-    cat("\nNo issues found when testing examples.")
-  } else {
-    cat(paste0("\n",num.issues, " issues found when testing examples. See log in\n", log.file,"\n"))
 
-    funs = setdiff(stat.df$fun, default.global.exempt.funs())
-    if (length(funs)>0) {
-
-      cat("\nIf you want to except the functions that lead to different arguments use the argument:\n")
-      exemption.call = paste0("exemptions=testex_exemptions(funs = c(",paste0('"',funs,'"', collapse=", "),"))")
-      cat("\n", exemption.call,"\n")
-    }
-
-
-  }
-  invisible(list(num.issues=num.issues, stat.df=stat.df))
 }
 
 
@@ -90,14 +30,93 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_
 testex_create = function(sources,exemptions=testex_exemptions(), parent.env=parent.frame(),  verbose=TRUE) {
   restore.point("testex_create")
   ex.df = parse.examples(sources)
-  ex.res = eval.examples(ex.df, parent.env=parent.env)
-  list(
+  ex.res = eval.examples(ex.df, parent.env=parent.env, verbose=verbose)
+  et = list(
     time=Sys.time(),
     exemptions=testex_exemptions(),
     ex.df = ex.df,
     ex.res = ex.res
   )
+  class(et) = c("testex_object","list")
+  et
 }
+
+#' Run example tests
+#'
+#' Reruns all examples that have been originally evaluated and stored in an example test.
+#'
+#' Returns the number of calls that now return different values or throw an error and writes a detailed log as Rmd file.
+#'
+#' @param et An example test originally created with \code{\link{testex_create}}
+#' @param log.file The file name of the log. Should be an Rmd file.
+#' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
+#' @param parent.env The parent environment in which examples are evaluated.
+#' @param verbose Shall extra information be shown?
+testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_test_stats.csv", parent.env = parent.frame(), exemptions=et$exemptions, verbose=TRUE) {
+  restore.point("testex_run")
+  writeLines(paste0(
+"# Comparison of examples
+
+", Sys.time(), " (new) vs
+", et$time, " (old)
+"), log.file)
+
+  num.issues = 0
+  issues = vector("list", NROW(et$ex.df))
+  for (i in seq_len(NROW(et$ex.df))) {
+    ex = et$ex.df[i,]
+    if (!is.null(ex$include))
+      if (ex$include==FALSE) next
+    write.log(log.file,"## ", ex$file, " ", ex$part,"\n")
+    new.res = eval.example(ex,parent.env = parent.env, verbose = verbose)
+    old.res = et$ex.res[[i]]
+    res = compare.example.results(ex,old.res,new.res, exemptions=exemptions)
+    num.issues = num.issues + res$num.issues
+    write.log(log.file, res$log)
+    issues[[i]] = res$issue.df
+  }
+
+  issue.df = bind_rows(issues)
+
+  stat.df = issue.df %>%
+    group_by(fun) %>%
+    summarize(differs=sum(differs), error=sum(error)) %>%
+    ungroup() %>%
+    arrange(-differs, -error)
+
+  write.csv(stat.df,stat.file, row.names = FALSE)
+
+
+  if (num.issues==0) {
+    if (verbose)
+      cat("\nNo issues found when testing examples.")
+  } else {
+    if (verbose) {
+      cat(paste0("\n",num.issues, " issues found when testing examples. See log in\n", log.file,"\n"))
+
+      funs = setdiff(stat.df$fun, exemptions$funs)
+      if (length(funs)>0) {
+        funs = setdiff(stat.df$fun, default.global.exempt.funs())
+
+        cat("\nIf you want to exempt the functions that lead different results call testex_run with the argument:\n")
+        exemption.call = paste0("exemptions=testex_exemptions(funs = c(",paste0('"',funs,'"', collapse=", "),"))")
+        cat("\n", exemption.call,"\n")
+      }
+      classes = setdiff(unique(issue.df$class),exemptions$classes)
+      spec.classes = setdiff(classes, c("numeric","character","list","data.frame","matrix","logical","tbl_df"))
+      if (length(spec.classes)>0) {
+        ex.classes = setdiff(spec.classes, default.global.exempt.classes())
+
+        cat("\nIf you want to exempt special classes that lead different results call testex_run with the argument:\n")
+        exemption.call = paste0("exemptions=testex_exemptions(classes = c(",paste0('"',ex.classes,'"', collapse=", "),"))")
+        cat("\n", exemption.call,"\n")
+      }
+    }
+  }
+  invisible(list(num.issues=num.issues, issue.df=issue.df,  stat.df=stat.df))
+}
+
+
 
 compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
   restore.point("compare.example.results")
@@ -140,16 +159,17 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
 
   }
   rows = which(!no.problem)
-  stat.df = quick_df(fun=new.res$call.name[rows], differs=!same[rows], error=new.res$error[rows])
 
+  if (length(rows)>0) frow=1 else frow = rows
+  issue.df = quick_df(file=ex$file[frow], part=ex$part[frow],call=old.res$calls[rows], class=old.res$class[rows], fun=old.res$call.name[rows], differs=!same[rows], error=new.res$error[rows], code=old.res$code[rows])
 
-  list(ok=ok,stat.df = stat.df, num.issues=num.issues, log=log)
+  list(ok=ok,issue.df = issue.df, num.issues=num.issues, log=log)
 }
 
 
-eval.examples = function(ex.df, parent.env = parent.frame()) {
+eval.examples = function(ex.df, parent.env = parent.frame(), verbose=TRUE) {
   ex.res = lapply(seq_len(NROW(ex.df)), function(i){
-    eval.example(ex.df[i,], parent.env=parent.env)
+    eval.example(ex.df[i,], parent.env=parent.env, verbose=verbose)
   })
   ex.res
 }
@@ -179,7 +199,10 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
     if (is(res,"try-error")) {
       df$error[i] = TRUE
     } else {
-      df$digest[i] = digest(res)
+      # Serialize ignoring environment references
+      ser = serialize(res, NULL, refhook=function(...) "")
+
+      df$digest[i] = digest(ser,serialize = FALSE)
       df$class[i] = class(res)[1]
       #df$value[[i]] = get.short.value(res)
     }
