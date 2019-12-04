@@ -114,7 +114,9 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, par
       }
     }
   }
-  invisible(list(num.issues=num.issues, issue.df=issue.df,  stat.df=stat.df))
+  res = list(num.issues=num.issues, issue.df=issue.df,  stat.df=stat.df)
+  class(res) = c("testex_run_results","list")
+  invisible(res)
 }
 
 
