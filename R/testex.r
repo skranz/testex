@@ -52,7 +52,7 @@ testex_create = function(sources,exemptions=testex_exemptions(), parent.env=pare
 #' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
 #' @param parent.env The parent environment in which examples are evaluated.
 #' @param verbose Shall extra information be shown?
-testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, parent.env = parent.frame(), exemptions=et$exemptions, verbose=TRUE) {
+testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, parent.env = parent.frame(), exemptions=et$exemptions, cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
   restore.point("testex_run")
   writeLines(paste0(
 "# Comparison of examples
@@ -68,7 +68,7 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, par
     if (!is.null(ex$include))
       if (ex$include==FALSE) next
     write.log(log.file,"## ", ex$file, " ", ex$part,"\n")
-    new.res = eval.example(ex,parent.env = parent.env, verbose = verbose)
+    new.res = eval.example(ex,parent.env = parent.env, verbose = verbose, cat.code=cat.code, cat.output=cat.output)
     old.res = et$ex.res[[i]]
     res = compare.example.results(ex,old.res,new.res, exemptions=exemptions)
     num.issues = num.issues + res$num.issues
@@ -168,15 +168,15 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
 }
 
 
-eval.examples = function(ex.df, parent.env = parent.frame(), verbose=TRUE) {
+eval.examples = function(ex.df, parent.env = parent.frame(), cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
   ex.res = lapply(seq_len(NROW(ex.df)), function(i){
-    eval.example(ex.df[i,], parent.env=parent.env, verbose=verbose)
+    eval.example(ex.df[i,], parent.env=parent.env, verbose=verbose, cat.code=cat.code, cat.output=cat.output)
   })
   ex.res
 }
 
 
-eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env = parent.frame(), verbose=TRUE) {
+eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env = parent.frame(), cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
   restore.point("eval.example")
 
   if (verbose) {
@@ -192,9 +192,24 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
 
   for (i in seq_len(NROW(df))) {
     call = df$calls[[i]]
+    if (cat.code) {
+      cat("\n>",df$code[i])
+    }
     start = Sys.time()
     res = try(eval(call, env),silent = TRUE)
     stop = Sys.time()
+    if (cat.output) {
+      assign = FALSE
+      if (length(call)>1) {
+        sym = as.character(call[[1]])
+        if (sym=="<-" | sym == "=")
+          assign = TRUE
+      }
+      if (!assign) {
+        cat("\n")
+        print(res)
+      }
+    }
     secs = as.double(stop-start)
     df$secs[i] = secs
     if (is(res,"try-error")) {
