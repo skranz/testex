@@ -2,6 +2,8 @@ testex.example = function() {
   library(testex)
   "Hello Test!"
 
+  df = data.frame(x=1:10,y=11:20)
+
   f = function(x) {
     x
   }
