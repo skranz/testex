@@ -25,7 +25,7 @@ script:
   - echo "travis_fold:end:run_et folding ends"
 
 after_failure:
-  - Rscript testex/report.r
+  - Rscript testex/report.R
 
 after_success:
-  - Rscript testex/report.r
+  - Rscript testex/report.R
