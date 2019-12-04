@@ -27,10 +27,10 @@ example = function() {
 #' @param exemptions possible exemptions of function calls or returned classes that shall not be compared, generated with \code{\link{testex_exemptions}}.
 #' @param parent.env The parent environment in which examples are evaluated. By default \code{parent.frame()}.
 #' @param verbose Shall extra information be shown while creating the tests?
-testex_create = function(sources,exemptions=testex_exemptions(), parent.env=parent.frame(),  verbose=TRUE) {
+testex_create = function(sources,exemptions=testex_exemptions(), parent.env=parent.frame(), print.code=FALSE, print.output = FALSE, print.error=TRUE, stop.on.error=TRUE, verbose=TRUE) {
   restore.point("testex_create")
   ex.df = parse.examples(sources)
-  ex.res = eval.examples(ex.df, parent.env=parent.env, verbose=verbose)
+  ex.res = eval.examples(ex.df, parent.env=parent.env, print.code=print.code, print.output=print.output, print.error=print.error, stop.on.error=stop.on.error, verbose=verbose)
   et = list(
     time=Sys.time(),
     exemptions=testex_exemptions(),
@@ -52,7 +52,7 @@ testex_create = function(sources,exemptions=testex_exemptions(), parent.env=pare
 #' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
 #' @param parent.env The parent environment in which examples are evaluated.
 #' @param verbose Shall extra information be shown?
-testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, parent.env = parent.frame(), exemptions=et$exemptions, cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
+testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, parent.env = parent.frame(), exemptions=et$exemptions, print.code=FALSE, print.output=FALSE, verbose=TRUE) {
   restore.point("testex_run")
   writeLines(paste0(
 "# Comparison of examples
@@ -68,7 +68,7 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, par
     if (!is.null(ex$include))
       if (ex$include==FALSE) next
     write.log(log.file,"## ", ex$file, " ", ex$part,"\n")
-    new.res = eval.example(ex,parent.env = parent.env, verbose = verbose, cat.code=cat.code, cat.output=cat.output)
+    new.res = eval.example(ex,parent.env = parent.env, verbose = verbose, print.code=print.code, print.output=print.output)
     old.res = et$ex.res[[i]]
     res = compare.example.results(ex,old.res,new.res, exemptions=exemptions)
     num.issues = num.issues + res$num.issues
@@ -168,15 +168,34 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
 }
 
 
-eval.examples = function(ex.df, parent.env = parent.frame(), cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
-  ex.res = lapply(seq_len(NROW(ex.df)), function(i){
-    eval.example(ex.df[i,], parent.env=parent.env, verbose=verbose, cat.code=cat.code, cat.output=cat.output)
-  })
-  ex.res
+eval.examples = function(ex.df, parent.env = parent.frame(), print.code=FALSE, print.output=FALSE,  print.error=FALSE, stop.on.error=FALSE,  verbose=TRUE) {
+  restore.point("eval.examples")
+
+  res.li = vector("list",NROW(ex.df))
+
+  for (i in seq_len(NROW(ex.df))) {
+    ex = ex.df[i,]
+
+    # Always evaluate example in new
+    # environment unless we
+    # have examples from the same Rmd file
+    make.new.env = TRUE
+    if (i > 1) {
+      is.rmd = tolower(tools::file_ext(ex$file))=="rmd"
+      if (is.rmd & (ex.df$file[i-1] == ex$file))
+        make.new.env = FALSE
+    }
+    if (make.new.env)
+      env = create.example.env(ex, parent.env)
+
+    res.li[[i]] = eval.example(ex, env=env, parent.env=parent.env, verbose=verbose, print.code=print.code, print.output=print.output,  print.error=print.error, stop.on.error=stop.on.error)
+  }
+
+  res.li
 }
 
 
-eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env = parent.frame(), cat.code=FALSE, cat.output=FALSE, verbose=TRUE) {
+eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env = parent.frame(), print.code=FALSE, print.output=FALSE,  print.error=FALSE,  verbose=TRUE, stop.on.error=FALSE) {
   restore.point("eval.example")
 
   if (verbose) {
@@ -192,13 +211,13 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
 
   for (i in seq_len(NROW(df))) {
     call = df$calls[[i]]
-    if (cat.code) {
+    if (print.code) {
       cat("\n>",df$code[i])
     }
     start = Sys.time()
     res = try(eval(call, env),silent = TRUE)
     stop = Sys.time()
-    if (cat.output) {
+    if (print.output) {
       assign = FALSE
       if (length(call)>1) {
         sym = as.character(call[[1]])
@@ -213,7 +232,20 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
     secs = as.double(stop-start)
     df$secs[i] = secs
     if (is(res,"try-error")) {
+
       df$error[i] = TRUE
+      if (print.error) {
+        if (!print.code) {
+          cat("Error when evaluating:\n",df$code[i] )
+        }
+        if (!stop.on.error)
+          cat("\n",as.character(res))
+      }
+      if (stop.on.error) {
+        msg = paste0(as.character(res),"\nCall with the argument stop.on.error = FALSE to evaluate examples even if there are errors")
+        stop(msg, call. = FALSE)
+      }
+
     } else {
       # Serialize ignoring environment references
       ser = serialize(res, NULL, refhook=function(...) "", version=2)
