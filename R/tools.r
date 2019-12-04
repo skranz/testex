@@ -33,6 +33,7 @@ quick_df = function(...) {
 }
 
 write.log = function(log.file,...) {
+  if (is.null(log.file)) return()
   txt = paste0(..., sep="")
   con = file(log.file,"at")
   writeLines(txt, con)

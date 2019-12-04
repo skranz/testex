@@ -52,7 +52,7 @@ testex_create = function(sources,exemptions=testex_exemptions(), parent.env=pare
 #' @param stat.file The name of the csv file that contains statistics about how many function calls of particular type failed.
 #' @param parent.env The parent environment in which examples are evaluated.
 #' @param verbose Shall extra information be shown?
-testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_test_stats.csv", parent.env = parent.frame(), exemptions=et$exemptions, verbose=TRUE) {
+testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, parent.env = parent.frame(), exemptions=et$exemptions, verbose=TRUE) {
   restore.point("testex_run")
   writeLines(paste0(
 "# Comparison of examples
@@ -84,7 +84,8 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file="example_
     ungroup() %>%
     arrange(-differs, -error)
 
-  write.csv(stat.df,stat.file, row.names = FALSE)
+  if (!is.null(stat.file))
+    write.csv(stat.df,stat.file, row.names = FALSE)
 
 
   if (num.issues==0) {
