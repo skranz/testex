@@ -148,13 +148,13 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
     code[rows] = paste0(code[rows],"\n### RESULTS DIFFER")
 
     rows = !no.error & !same & new.res$error
-    code[rows] = paste0(code[rows],"\n### !! THROWS NEW ERROR !!")
+    code[rows] = paste0(code[rows],"\n### !! THROWS NEW ERROR !!\n", new.res$error.msg[rows])
 
     rows = !no.error & !same & !new.res$error & old.res$error
     code[rows] = paste0(code[rows],"\n### previous error corrected.")
 
     rows = !no.error & new.res$error & old.res$error
-    code[rows] = paste0(code[rows],"\n### As before an error is thrown.")
+    code[rows] = paste0(code[rows],"\n### As before an error is thrown.\n", new.res$error.msg[rows])
 
     num.issues = sum(!no.problem)
     ok = num.issues == 0
@@ -164,7 +164,7 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL) {
   rows = which(!no.problem)
 
   if (length(rows)>0) frow=1 else frow = rows
-  issue.df = quick_df(file=ex$file[frow], part=ex$part[frow],call=old.res$calls[rows], class=old.res$class[rows], fun=old.res$call.name[rows], differs=!same[rows], error=new.res$error[rows], code=old.res$code[rows])
+  issue.df = quick_df(file=ex$file[frow], part=ex$part[frow],call=old.res$calls[rows], class=old.res$class[rows], fun=old.res$call.name[rows], differs=!same[rows], error=new.res$error[rows], code=old.res$code[rows], error.msg = new.res$error.msg[rows])
 
   list(ok=ok,issue.df = issue.df, num.issues=num.issues, log=log)
 }
@@ -208,7 +208,7 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
   df = ex %>%
     select(-extra.funs, -call.names,-code) %>%
     unnest(calls) %>%
-    mutate(call.name = call.name, step = seq_len(n()), digest=NA, error=FALSE, class=NA, secs=NA_real_, code=code)
+    mutate(call.name = call.name, step = seq_len(n()), digest=NA, error=FALSE, class=NA, secs=NA_real_, code=code, error.msg = "")
   #df$value = vector("list",NROW(df))
 
   for (i in seq_len(NROW(df))) {
@@ -236,6 +236,7 @@ eval.example = function(ex, env=create.example.env(ex, parent.env), parent.env =
     if (is(res,"try-error")) {
 
       df$error[i] = TRUE
+      df$error.msg[i] = paste0(as.character(res), collapse="\n")
       if (print.error) {
         if (!print.code) {
           cat("Error when evaluating:\n",df$code[i] )
