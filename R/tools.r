@@ -32,6 +32,10 @@ quick_df = function(...) {
   as_tibble(list(...),validate=FALSE)
 }
 
+str_string = function(x) {
+  paste0(capture.output(str(x)), collapse="\n")
+}
+
 write.log = function(log.file,...) {
   if (is.null(log.file)) return()
   txt = paste0(..., sep="")

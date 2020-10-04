@@ -1,6 +1,6 @@
 example = function() {
   code = "
-  set.seed(1)
+  #set.seed(1)
   f = function(x) {
     if (x==2) stop('Error')
     x*x*runif(1)
@@ -172,7 +172,10 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.o
   } else {
     code = unlist(ex$code)
     rows = !no.val & !same & !new.res$error &!old.res$error
-    code[rows] = paste0(code[rows],"\n### RESULTS DIFFER")
+    code[rows] = paste0(code[rows],"\n### RESULTS DIFFER",
+      "\nOld:\n\tclass = ", old.res$class[rows], "\n\tvalue = ", sapply(old.res$value[rows], str_string),
+      "\nNew:\n\tclass = ", new.res$class[rows], "\n\tvalue = ", sapply(new.res$value[rows], str_string)
+    )
 
     rows = !no.error & !same & new.res$error
     code[rows] = paste0(code[rows],"\n### !! THROWS NEW ERROR !!\n", new.res$error.msg[rows])
