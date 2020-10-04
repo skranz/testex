@@ -143,67 +143,6 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, par
 
 
 
-compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.old.errors=FALSE) {
-  restore.point("compare.example.results")
-
-  same.val = sapply(seq_along(old.res$value), function(i) {
-    identical(old.res$value[[i]], new.res$value[[i]])
-  })
-  same = is.true(
-    old.res$digest == new.res$digest &
-    old.res$error == new.res$error &
-    same.val
-  )
-
-  no.val = old.res$call.name %in% union(exemptions$funs, exemptions$exempt.error.funs) | old.res$class %in% exemptions$classes
-
-  no.error = old.res$call.name %in% exemptions$exempt.error.funs
-
-
-  ok = TRUE
-  num.issues = 0
-  log = NULL
-
-  if (allow.old.errors) {
-    no.problem = (no.val | same)
-  } else {
-    no.problem = no.error | ((no.val | same) & !new.res$error)
-  }
-
-  if (all(no.problem)) {
-    log = "Everything ok."
-  } else {
-    code = unlist(ex$code)
-    rows = !no.val & !same & !new.res$error &!old.res$error
-    code[rows] = paste0(code[rows],"\n### RESULTS DIFFER",
-      "\nOld:\n\tclass = ", old.res$class[rows], "\n\tvalue = ", sapply(old.res$value[rows], str_string),
-      "\nNew:\n\tclass = ", new.res$class[rows], "\n\tvalue = ", sapply(new.res$value[rows], str_string),
-      "\nIdentical value = ",identical(new.res$value, old.res$value),
-      "\nIdentical digest = ",identical(new.res$digest, old.res$digest),
-      "\nIdentical class = ",identical(new.res$class, old.res$class)    )
-
-    rows = !no.error & !same & new.res$error
-    code[rows] = paste0(code[rows],"\n### !! THROWS NEW ERROR !!\n", new.res$error.msg[rows])
-
-    rows = !no.error & !same & !new.res$error & old.res$error
-    code[rows] = paste0(code[rows],"\n### previous error corrected.")
-
-    rows = !no.error & new.res$error & old.res$error
-    code[rows] = paste0(code[rows],"\n### As before an error is thrown.\n", new.res$error.msg[rows])
-
-    num.issues = sum(!no.problem)
-    ok = num.issues == 0
-    log = paste0("```{r eval=FALSE}\n", paste0(code, collapse="\n"),"\n```")
-
-  }
-  rows = which(!no.problem)
-
-  if (length(rows)>0) frow=1 else frow = rows
-  issue.df = quick_df(file=ex$file[frow], part=ex$part[frow],call=old.res$calls[rows], class=old.res$class[rows], fun=old.res$call.name[rows], differs=!same[rows], error=new.res$error[rows], code=old.res$code[rows], error.msg = new.res$error.msg[rows])
-
-  list(ok=ok,issue.df = issue.df, num.issues=num.issues, log=log)
-}
-
 
 eval.examples = function(ex.df, parent.env = parent.frame(), print.code=FALSE, print.output=FALSE,  print.error=FALSE, stop.on.error=FALSE,  verbose=TRUE, mode="v", ignore.calls=NULL) {
   restore.point("eval.examples")

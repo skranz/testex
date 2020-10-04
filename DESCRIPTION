@@ -8,6 +8,6 @@ Description: Test a package by running and comparing examples.
 License: GPL >= 2.0
 Encoding: UTF-8
 LazyData: true
-Depends: dplyr, tidyr, digest, restorepoint
+Depends: dplyr, tidyr, digest, restorepoint, diffobj
 Suggests: knitr
 RoxygenNote: 6.0.1
