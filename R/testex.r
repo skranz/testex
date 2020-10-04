@@ -180,11 +180,7 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.o
       "\nNew:\n\tclass = ", new.res$class[rows], "\n\tvalue = ", sapply(new.res$value[rows], str_string),
       "\nIdentical value = ",identical(new.res$value, old.res$value),
       "\nIdentical digest = ",identical(new.res$digest, old.res$digest),
-      "\nIdentical class = ",identical(new.res$class, old.res$class),
-      "\nIdentical class = ",identical(new.res$class, old.res$class),
-
-
-    )
+      "\nIdentical class = ",identical(new.res$class, old.res$class)    )
 
     rows = !no.error & !same & new.res$error
     code[rows] = paste0(code[rows],"\n### !! THROWS NEW ERROR !!\n", new.res$error.msg[rows])

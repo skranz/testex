@@ -1,7 +1,7 @@
 # Comparison of examples
 
-2020-10-04 10:36:23 (new) vs
-2020-10-04 10:35:48 (old)
+2020-10-04 13:00:47 (new) vs
+2020-10-04 13:00:40 (old)
 
 ## testex/examples.r testex.example
 
