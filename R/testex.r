@@ -305,7 +305,7 @@ get.short.value = function(x) {
   }
   if (is.numeric(x) | is.character(x) | is.logical(x)) {
     if (NROW(x)>2) {
-      return(list(short=x[1,NROW(x)],nrow=nrow(x)))
+      return(list(short=x[c(1,NROW(x))],nrow=NROW(x)))
     } else {
       return(x)
     }
