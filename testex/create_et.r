@@ -1,4 +1,4 @@
-setwd("D:/libraries/testex/testex")
+setwd("C:/libraries/testex/testex")
 
 library(testex)
 
