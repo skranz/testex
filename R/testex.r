@@ -146,10 +146,13 @@ testex_run = function(et, log.file = "example_test_log.Rmd", stat.file=NULL, par
 compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.old.errors=FALSE) {
   restore.point("compare.example.results")
 
+  same.val = sapply(seq_along(old.res$value), function(i) {
+    identical(old.res$value[[i]], new.res$value[[i]])
+  })
   same = is.true(
-    identical(old.res$digest,new.res$digest) &
-    identical(old.res$error,new.res$error) &
-    identical(old.res$value, new.res$value)
+    old.res$digest == new.res$digest &
+    old.res$error == new.res$error &
+    same.val
   )
 
   no.val = old.res$call.name %in% union(exemptions$funs, exemptions$exempt.error.funs) | old.res$class %in% exemptions$classes
@@ -174,7 +177,13 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.o
     rows = !no.val & !same & !new.res$error &!old.res$error
     code[rows] = paste0(code[rows],"\n### RESULTS DIFFER",
       "\nOld:\n\tclass = ", old.res$class[rows], "\n\tvalue = ", sapply(old.res$value[rows], str_string),
-      "\nNew:\n\tclass = ", new.res$class[rows], "\n\tvalue = ", sapply(new.res$value[rows], str_string)
+      "\nNew:\n\tclass = ", new.res$class[rows], "\n\tvalue = ", sapply(new.res$value[rows], str_string),
+      "\nIdentical value = ",identical(new.res$value, old.res$value),
+      "\nIdentical digest = ",identical(new.res$digest, old.res$digest),
+      "\nIdentical class = ",identical(new.res$class, old.res$class),
+      "\nIdentical class = ",identical(new.res$class, old.res$class),
+
+
     )
 
     rows = !no.error & !same & new.res$error
