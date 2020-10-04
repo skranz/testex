@@ -3,7 +3,7 @@ compare.example.results = function(ex,old.res, new.res, exemptions=NULL, allow.o
   restore.point("compare.example.results")
 
   same.val = sapply(seq_along(old.res$value), function(i) {
-    identical(old.res$value[[i]], new.res$value[[i]],ignore.environment = TRUE)
+    isTRUE(all.equal(old.res$value[[i]], new.res$value[[i]], check.attributes=FALSE))
   })
   same = is.true(
     old.res$digest == new.res$digest &
